@@ -3,54 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <title>Cotizador Corporativo</title>
+    <!-- Tipografía Sora -->
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --color-primario: #3D57C7;
+            --color-secundario: #005E5C;
+            --color-acento: #C2ADFF;
+            --color-texto: #005E5C;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Sora', sans-serif;
             margin: 20px;
             display: flex;
             gap: 40px;
+            background-color: #F9F9FF;
+            color: var(--color-texto);
         }
+
         .form-section, .summary-section {
             width: 50%;
         }
+
         h2 {
             margin-bottom: 10px;
+            color: var(--color-primario);
         }
+
         label {
             display: block;
             margin-top: 10px;
         }
+
         input[type="text"], input[type="number"] {
             width: 100%;
-            padding: 5px;
+            padding: 6px 8px;
             margin-top: 2px;
+            border: 1px solid var(--color-secundario);
+            border-radius: 4px;
+            font-family: 'Sora', sans-serif;
         }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: var(--color-primario);
+            outline: none;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
         }
-        th, td {
+
+        th {
+            background-color: var(--color-acento);
+            color: var(--color-secundario);
+            padding: 10px;
+        }
+
+        td {
             border: 1px solid #ccc;
             padding: 8px;
-            text-align: left;
         }
+
         .adherente-row {
             background-color: #f9f9f9;
         }
+
         .btn {
             margin-top: 10px;
             padding: 6px 12px;
             cursor: pointer;
+            background-color: var(--color-primario);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Sora', sans-serif;
+            transition: background-color 0.2s;
         }
+
+        .btn:hover {
+            background-color: var(--color-secundario);
+        }
+
         .summary {
-            background-color: #f0f0f0;
+            background-color: var(--color-acento);
             padding: 15px;
             border-radius: 8px;
+            color: var(--color-secundario);
         }
+
         .tooltip {
             font-size: 12px;
-            color: #666;
+            color: #333;
         }
     </style>
 </head>
@@ -80,6 +126,7 @@
                     <th>Apellido y Nombre</th>
                     <th>CUIL</th>
                     <th>Remuneración</th>
+                    <th>Aporte (8%)</th>
                     <th>Adherentes</th>
                     <th>Acciones</th>
                 </tr>
@@ -96,6 +143,7 @@
             <p>Total Titulares: <span id="totalTitulares">0</span></p>
             <p>Total Adherentes: <span id="totalAdherentes">0</span></p>
             <p><strong>Total General de Cápitas: <span id="totalCapitas">0</span></strong></p>
+            <p><strong>Total Aportes: $<span id="totalAportes">0.00</span></strong></p>
         </div>
     </div>
 
@@ -113,10 +161,13 @@
                 return;
             }
 
+            const aporte = remuneracion * 0.08;
+
             const titular = {
                 nombre,
                 cuil,
                 remuneracion,
+                aporte,
                 adherentes,
                 id: Date.now()
             };
@@ -143,6 +194,7 @@
                     <td>${t.nombre}</td>
                     <td>${t.cuil}</td>
                     <td>${t.remuneracion.toFixed(2)}</td>
+                    <td>${t.aporte.toFixed(2)}</td>
                     <td>${t.adherentes}</td>
                     <td><button class="btn" onclick="eliminarTitular(${t.id})">Eliminar</button></td>
                 `;
@@ -154,10 +206,12 @@
             const totalTitulares = titulares.length;
             const totalAdherentes = titulares.reduce((sum, t) => sum + t.adherentes, 0);
             const totalCapitas = totalTitulares + totalAdherentes;
+            const totalAportes = titulares.reduce((sum, t) => sum + t.aporte, 0);
 
             document.getElementById("totalTitulares").textContent = totalTitulares;
             document.getElementById("totalAdherentes").textContent = totalAdherentes;
             document.getElementById("totalCapitas").textContent = totalCapitas;
+            document.getElementById("totalAportes").textContent = totalAportes.toFixed(2);
         }
 
         function eliminarTitular(id) {
