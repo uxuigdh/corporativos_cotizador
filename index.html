@@ -36,7 +36,7 @@
             margin-top: 10px;
         }
 
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], input[type="file"] {
             width: 100%;
             padding: 6px 8px;
             margin-top: 2px;
@@ -45,7 +45,7 @@
             font-family: 'Sora', sans-serif;
         }
 
-        input[type="text"]:focus, input[type="number"]:focus {
+        input[type="text"]:focus, input[type="number"]:focus, input[type="file"]:focus {
             border-color: var(--color-primario);
             outline: none;
         }
@@ -65,10 +65,6 @@
         td {
             border: 1px solid #ccc;
             padding: 8px;
-        }
-
-        .adherente-row {
-            background-color: #f9f9f9;
         }
 
         .btn {
@@ -119,6 +115,12 @@
         </label>
         <button class="btn" onclick="agregarTitular()">Agregar Titular</button>
 
+        <h2>Carga Masiva CSV</h2>
+        <label>Seleccionar archivo CSV:
+            <input type="file" id="csvFile" accept=".csv">
+        </label>
+        <button class="btn" onclick="cargarCSV()">Cargar CSV</button>
+
         <h2>Tabla de Titulares y Adherentes</h2>
         <table id="tablaTitulares">
             <thead>
@@ -150,11 +152,14 @@
     <script>
         let titulares = [];
 
-        function agregarTitular() {
-            const nombre = document.getElementById("titularNombre").value.trim();
-            const cuil = document.getElementById("titularCUIL").value.trim();
-            const remuneracion = parseFloat(document.getElementById("titularRemuneracion").value);
-            const adherentes = parseInt(document.getElementById("titularAdherentes").value);
+        function agregarTitular(nombre, cuil, remuneracion, adherentes) {
+            if (nombre === undefined) {
+                // Inputs del formulario manual
+                nombre = document.getElementById("titularNombre").value.trim();
+                cuil = document.getElementById("titularCUIL").value.trim();
+                remuneracion = parseFloat(document.getElementById("titularRemuneracion").value);
+                adherentes = parseInt(document.getElementById("titularAdherentes").value);
+            }
 
             if (!nombre || !cuil || isNaN(remuneracion) || remuneracion < 0 || isNaN(adherentes) || adherentes < 0) {
                 alert("Por favor, complete todos los campos correctamente.");
@@ -169,7 +174,7 @@
                 remuneracion,
                 aporte,
                 adherentes,
-                id: Date.now()
+                id: Date.now() + Math.random()
             };
 
             titulares.push(titular);
@@ -218,6 +223,51 @@
             titulares = titulares.filter(t => t.id !== id);
             actualizarTabla();
             actualizarResumen();
+        }
+
+        function cargarCSV() {
+            const fileInput = document.getElementById("csvFile");
+            if (!fileInput.files.length) {
+                alert("Seleccione un archivo CSV primero.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result;
+                procesarCSV(text);
+            };
+
+            reader.readAsText(file);
+        }
+
+        function procesarCSV(text) {
+            const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+            // Asumimos primera fila = encabezados
+            const headers = lines[0].split(',').map(h => h.trim());
+            const idxNombre = headers.indexOf("Apellido y Nombre");
+            const idxCUIL = headers.indexOf("CUIL");
+            const idxRem = headers.indexOf("Remuneración");
+            const idxAdh = headers.indexOf("Cantidad de Adherentes");
+
+            if (idxNombre === -1 || idxCUIL === -1 || idxRem === -1 || idxAdh === -1) {
+                alert("CSV inválido. Debe contener: Apellido y Nombre, CUIL, Remuneración, Cantidad de Adherentes");
+                return;
+            }
+
+            for (let i = 1; i < lines.length; i++) {
+                const row = lines[i].split(',').map(r => r.trim());
+                if (!row[idxNombre]) continue; // ignorar filas vacías
+                const nombre = row[idxNombre];
+                const cuil = row[idxCUIL];
+                const remuneracion = parseFloat(row[idxRem]);
+                const adherentes = parseInt(row[idxAdh]) || 0;
+                agregarTitular(nombre, cuil, remuneracion, adherentes);
+            }
+
+            alert("CSV cargado correctamente!");
         }
     </script>
 
