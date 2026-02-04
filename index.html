@@ -2,9 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<title>COTIZADOR CORPORATIVO</title>
+<title>Cotizador Corporativo</title>
 
+<!-- Tipografía -->
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+
+<!-- SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
@@ -15,10 +18,16 @@ body {
     color: #2F3A4F;
 }
 
-h1 { color: #3D57C7; }
+h1 {
+    color: #3D57C7;
+}
 
-input, select { padding: 8px; margin-top: 8px; }
+input, select {
+    padding: 8px;
+    margin-top: 8px;
+}
 
+/* Helpers y alertas */
 .helper-adherentes {
     color: #B00020;
     font-size: 0.85rem;
@@ -32,25 +41,42 @@ input, select { padding: 8px; margin-top: 8px; }
     padding: 12px;
     margin: 16px 0;
     font-size: 0.9rem;
-    max-width: 720px;
+    max-width: 900px;
 }
 
+/* TABLERO */
 .resumen {
     background: #FFFFFF;
     padding: 16px;
     border-radius: 8px;
     margin: 16px 0;
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
 }
 
-.resumen div { min-width: 170px; }
+.resumen div {
+    text-align: center;
+}
 
+.resumen strong {
+    display: block;
+    font-size: 0.75rem;
+    color: #005E5C;
+    margin-bottom: 4px;
+}
+
+.resumen span {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* TABLA */
 table {
     border-collapse: collapse;
     width: 100%;
     background: #FFFFFF;
+    margin-top: 16px;
 }
 
 th, td {
@@ -69,18 +95,19 @@ th {
 <body>
 
 <h1>COTIZADOR CORPORATIVO</h1>
-
+<p>Asistente de contol para cotizaciones masivas</p>
 <input type="file" id="fileInput" accept=".xlsx">
 
 <p class="helper-adherentes">
-⚠️ En “Adherentes” se cuentan cónyuge e hijos. No incluir al titular.
+⚠️ En “Adherentes” se cuentan solo cónyuge e hijos. No incluir al titular.
 </p>
 
 <div id="alertaAdherentes" class="alerta-warning" style="display:none;"></div>
 
+<!-- TABLERO -->
 <div class="resumen">
     <div>
-        <strong>Plan</strong><br>
+        <strong>Plan</strong>
         <select id="planGlobal" onchange="actualizarResumen()">
             <option value="D2100">D2100 - $63.859</option>
             <option value="D3100">D3100 - $73.148</option>
@@ -88,21 +115,22 @@ th {
         </select>
     </div>
 
-    <div><strong>Titulares</strong><br><span id="totalTitulares">0</span></div>
-    <div><strong>Adherentes</strong><br><span id="totalAdherentes">0</span></div>
-    <div><strong>Total Cápitas</strong><br><span id="totalCapitas">0</span></div>
-    <div><strong>Total Aportes</strong><br>$<span id="totalAportes">0</span></div>
-    <div><strong>Costo Bruto</strong><br>$<span id="costoBruto">0</span></div>
-    <div><strong>Costo Neto</strong><br>$<span id="costoNeto">0</span></div>
+    <div><strong>Titulares</strong><span id="totalTitulares">0</span></div>
+    <div><strong>Adherentes</strong><span id="totalAdherentes">0</span></div>
+    <div><strong>Total Cápitas</strong><span id="totalCapitas">0</span></div>
+    <div><strong>Total Aportes</strong>$<span id="totalAportes">0</span></div>
+    <div><strong>Costo Bruto</strong>$<span id="costoBruto">0</span></div>
+    <div><strong>Costo Neto</strong>$<span id="costoNeto">0</span></div>
 </div>
 
+<!-- TABLA -->
 <table>
 <thead>
 <tr>
     <th>CUIL</th>
     <th>Apellido y nombre</th>
     <th>Remuneración</th>
-    <th>Aporte (8%)</th>
+    <th>Aporte</th>
     <th>Adherentes</th>
 </tr>
 </thead>
@@ -133,6 +161,7 @@ function handleFileUpload(e) {
         const data = XLSX.utils.sheet_to_json(sheet);
 
         let filasInvalidas = 0;
+        let remuneracionesBajas = 0;
 
         data.forEach(row => {
             const cuil = row["CUIL"];
@@ -148,6 +177,10 @@ function handleFileUpload(e) {
                 filasInvalidas++;
             }
 
+            if (remuneracion > 0 && remuneracion < 400000) {
+                remuneracionesBajas++;
+            }
+
             titulares.push({
                 cuil,
                 nombre,
@@ -158,25 +191,35 @@ function handleFileUpload(e) {
         });
 
         const filasConAdherentes = titulares.filter(t => t.adherentes >= 1).length;
-        const porcentaje = filasConAdherentes / titulares.length;
+        const porcentajeAdherentes = filasConAdherentes / titulares.length;
 
-        if (titulares.length > 5 && porcentaje >= 0.9) {
+        if (titulares.length > 5 && porcentajeAdherentes >= 0.9) {
             alertDiv.innerHTML += `
-            ⚠️ Atención: más del 90% de los titulares tienen adherentes.
-            Verificá que no se esté incluyendo al titular.<br><br>`;
-            alertDiv.style.display = "block";
+            ⚠️ Atención: en la mayoría de los registros todos los titulares tienen adherentes.
+               Verificá que no se esté incluyendo al titular.<br><br>`;
         }
 
         if (filasInvalidas > 0) {
             alertDiv.innerHTML += `
             ❗ Se detectaron ${filasInvalidas} filas con datos incompletos o inválidos.
-            Revisá el archivo Excel original antes de continuar.`;
+            Revisá el archivo Excel original.<br><br>`;
+        }
+
+        if (remuneracionesBajas > 0) {
+            alertDiv.innerHTML += `
+            ⚠️ Atención: se detectaron remuneraciones muy bajas.
+            Revisá que en el archivo original figure la <strong>remuneración</strong>
+            y no el <strong>aporte</strong>.`;
+        }
+
+        if (alertDiv.innerHTML !== "") {
             alertDiv.style.display = "block";
         }
 
         renderTabla();
         actualizarResumen();
     };
+
     reader.readAsBinaryString(e.target.files[0]);
 }
 
