@@ -1,192 +1,157 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>COTIZADOR CORPORATIVO</title>
+    <meta charset="UTF-8" />
+    <title>Cotizador corporativo</title>
 
     <!-- Tipografía -->
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
 
     <!-- SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
     <style>
-        :root {
-            --primario: #3D57C7;
-            --secundario: #005E5C;
-            --acento: #D0D8E8;
-            --fondo: #F9F9FF;
-        }
-
         body {
             font-family: 'Sora', sans-serif;
-            background: var(--fondo);
-            margin: 20px;
+            background-color: #E6EBF2;
+            padding: 24px;
+            color: #2F3A4F;
+        }
+
+        h1 {
+            color: #3D57C7;
+        }
+
+        input, select {
+            padding: 8px;
+            margin-top: 8px;
+        }
+
+        .helper-adherentes {
+            color: #B00020;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            max-width: 520px;
+        }
+
+        .alerta-warning {
+            background-color: #EEF2F7;
+            border-left: 4px solid #B00020;
+            padding: 12px;
+            margin: 16px 0;
+            font-size: 0.9rem;
+            max-width: 640px;
+        }
+
+        .resumen {
+            background: #FFFFFF;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
             display: flex;
-            gap: 40px;
-            color: var(--secundario);
+            gap: 24px;
+            flex-wrap: wrap;
         }
 
-        h2 {
-            color: var(--primario);
-            margin-bottom: 10px;
-        }
-
-        .left, .right {
-            width: 50%;
-        }
-
-        input[type="file"], select {
-            width: 100%;
-            padding: 8px;
-            margin-top: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--secundario);
-            font-family: 'Sora', sans-serif;
-        }
-
-        button {
-            margin-top: 10px;
-            padding: 8px;
-            width: 100%;
-            background: var(--primario);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: var(--secundario);
+        .resumen div {
+            min-width: 160px;
         }
 
         table {
-            width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            width: 100%;
+            background: #FFFFFF;
+            margin-top: 16px;
+        }
+
+        th, td {
+            border: 1px solid #D0D6E2;
+            padding: 8px;
+            font-size: 0.85rem;
         }
 
         th {
-            background: var(--acento);
-            padding: 10px;
-            text-align: left;
-        }
-
-        td {
-            padding: 8px;
-            border: 1px solid #ccc;
-        }
-
-        .summary {
-            background: var(--acento);
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .summary p {
-            margin: 6px 0;
+            background-color: #3D57C7;
+            color: #FFFFFF;
         }
     </style>
 </head>
 <body>
 
-<div class="left">
-    <h2>Carga de archivo Excel</h2>
-    <input type="file" id="fileInput" accept=".xlsx">
-    <button onclick="cargarXLSX()">Cargar XLSX</button>
+<h1>Coargar archivo</h1>
 
-    <p class="helper-adherentes">
-        ⚠️ En la columna <strong>“Cantidad de Adherentes”</strong>
-        solo deben cargarse cónyuge e hijos.
-        No incluir al titular.
-    </p>
-    
-    <!-- 🔴 ALERTA DINÁMICA -->
-    <div id="alertaAdherentes" class="alerta-warning" style="display:none;">
-        ⚠️ Atención: En la mayoría de los registros todos los titulares tienen adherentes.
-        <br>
-        Verificá que en la columna <strong>“Cantidad de Adherentes”</strong>
-        no se esté incluyendo al titular.
-    </div>
+<input type="file" id="fileInput" accept=".xlsx" />
 
-    <h2>Detalle de titulares</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>CUIL</th>
-                <th>Apellido y Nombre</th>
-                <th>Remuneración</th>
-                <th>Aporte (8%)</th>
-                <th>Adherentes</th>
-            </tr>
-        </thead>
-        <tbody id="tablaBody"></tbody>
-    </table>
+<p class="helper-adherentes">
+    ⚠️ En la columna <strong>“Adherentes”</strong> cargá solo
+    cónyuge e hijos. No incluir al titular.
+</p>
+
+<div id="alertaAdherentes" class="alerta-warning" style="display:none;">
+    ⚠️ Atención: En la mayoría de los registros todos los titulares tienen adherentes.
+    <br>
+    Verificá que no se esté incluyendo al titular como adherente.
 </div>
 
-<div class="right">
-    <h2>Cotización</h2>
-
-    <label><strong>Plan seleccionado</strong></label>
-    <select id="planGlobal" onchange="actualizarResumen()">
-        <option value="D2100">D2100 – $63.859</option>
-        <option value="D3100">D3100 – $73.148</option>
-        <option value="D4100">D4100 – $84.062</option>
-    </select>
-
-    <div class="summary" style="margin-top:15px">
-        <p>Titulares: <strong id="totalTitulares">0</strong></p>
-        <p>Adherentes: <strong id="totalAdherentes">0</strong></p>
-        <p>Total de cápitas: <strong id="totalCapitas">0</strong></p>
-        <p>Total de aportes: <strong>$<span id="totalAportes">0.00</span></strong></p>
-        <hr>
-        <p><strong>Costo bruto total:</strong></p>
-        <p style="font-size:18px">$<strong id="costoBruto">0.00</strong></p>
+<div class="resumen">
+    <div>
+        <strong>Plan</strong><br>
+        <select id="planGlobal" onchange="actualizarResumen()">
+            <option value="D2100">D2100 - $63.859</option>
+            <option value="D3100">D3100 - $73.148</option>
+            <option value="D4100">D4100 - $84.062</option>
+        </select>
     </div>
+
+    <div><strong>Titulares:</strong><br><span id="totalTitulares">0</span></div>
+    <div><strong>Adherentes:</strong><br><span id="totalAdherentes">0</span></div>
+    <div><strong>Total cápitas:</strong><br><span id="totalCapitas">0</span></div>
+    <div><strong>Total aportes:</strong><br>$<span id="totalAportes">0</span></div>
+    <div><strong>Costo bruto:</strong><br>$<span id="costoBruto">0</span></div>
 </div>
+
+<table>
+    <thead>
+        <tr>
+            <th>CUIL</th>
+            <th>Apellido y nombre</th>
+            <th>Remuneración</th>
+            <th>Aporte</th>
+            <th>Adherentes</th>
+        </tr>
+    </thead>
+    <tbody id="tablaDatos"></tbody>
+</table>
 
 <script>
-    let titulares = [];
+let titulares = [];
 
-    const preciosPlanes = {
-        D2100: 63859,
-        D3100: 73148,
-        D4100: 84062
-    };
+const preciosPlanes = {
+    D2100: 63859,
+    D3100: 73148,
+    D4100: 84062
+};
 
-    function cargarXLSX() {
-        const file = document.getElementById("fileInput").files[0];
-        if (!file) {
-            alert("Seleccione un archivo XLSX.");
-            return;
-        }
+document.getElementById("fileInput").addEventListener("change", handleFileUpload);
 
-        const reader = new FileReader();
-        reader.onload = e => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(sheet);
-            procesarDatos(json);
-        };
-        reader.readAsArrayBuffer(file);
-    }
+function handleFileUpload(e) {
+    document.getElementById("alertaAdherentes").style.display = "none";
+    titulares = [];
 
-    function procesarDatos(data) {
-        titulares = [];
+    const reader = new FileReader();
+    reader.onload = evt => {
+        const workbook = XLSX.read(evt.target.result, { type: "binary" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(sheet);
 
         data.forEach(row => {
-            if (!row["CUIL"]) return;
-
-            const remuneracion = Number(row["Remuneración"]);
-            const adherentes =
-                Number(
-                    row["Cantidad de Adherentes"] ??
-                    row["Adherentes"] ??
-                    row["Cantidad adherentes"] ??
-                    row["Cant. Adherentes"] ??
-                    0
-                );
+            const remuneracion = Number(row["Remuneración"]) || 0;
+            const adherentes = Number(
+                row["Cantidad de Adherentes"] ??
+                row["Adherentes"] ??
+                row["Cantidad adherentes"] ??
+                0
+            );
 
             titulares.push({
                 cuil: row["CUIL"],
@@ -196,49 +161,52 @@
                 adherentes
             });
         });
+
         const filasConAdherentes = titulares.filter(t => t.adherentes >= 1).length;
         const porcentaje = filasConAdherentes / titulares.length;
 
         if (titulares.length > 5 && porcentaje >= 0.9) {
-            mostrarAdvertenciaAdherentes();
+            document.getElementById("alertaAdherentes").style.display = "block";
         }
-        
+
         renderTabla();
         actualizarResumen();
-    }
+    };
+    reader.readAsBinaryString(e.target.files[0]);
+}
 
-    function renderTabla() {
-        const tbody = document.getElementById("tablaBody");
-        tbody.innerHTML = "";
+function renderTabla() {
+    const tbody = document.getElementById("tablaDatos");
+    tbody.innerHTML = "";
 
-        titulares.forEach(t => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${t.cuil}</td>
-                <td>${t.nombre}</td>
-                <td>${t.remuneracion.toFixed(2)}</td>
-                <td>${t.aporte.toFixed(2)}</td>
-                <td>${t.adherentes}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+    titulares.forEach(t => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${t.cuil}</td>
+            <td>${t.nombre}</td>
+            <td>${t.remuneracion.toFixed(2)}</td>
+            <td>${t.aporte.toFixed(2)}</td>
+            <td>${t.adherentes}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-    function actualizarResumen() {
-        const totalTitulares = titulares.length;
-        const totalAdherentes = titulares.reduce((s, t) => s + t.adherentes, 0);
-        const totalCapitas = totalTitulares + totalAdherentes;
-        const totalAportes = titulares.reduce((s, t) => s + t.aporte, 0);
+function actualizarResumen() {
+    const totalTitulares = titulares.length;
+    const totalAdherentes = titulares.reduce((s, t) => s + t.adherentes, 0);
+    const totalCapitas = totalTitulares + totalAdherentes;
+    const totalAportes = titulares.reduce((s, t) => s + t.aporte, 0);
 
-        const plan = document.getElementById("planGlobal").value;
-        const costoBruto = preciosPlanes[plan] * totalCapitas;
+    const plan = document.getElementById("planGlobal").value;
+    const costoBruto = preciosPlanes[plan] * totalCapitas;
 
-        document.getElementById("totalTitulares").textContent = totalTitulares;
-        document.getElementById("totalAdherentes").textContent = totalAdherentes;
-        document.getElementById("totalCapitas").textContent = totalCapitas;
-        document.getElementById("totalAportes").textContent = totalAportes.toFixed(2);
-        document.getElementById("costoBruto").textContent = costoBruto.toFixed(2);
-    }
+    document.getElementById("totalTitulares").textContent = totalTitulares;
+    document.getElementById("totalAdherentes").textContent = totalAdherentes;
+    document.getElementById("totalCapitas").textContent = totalCapitas;
+    document.getElementById("totalAportes").textContent = totalAportes.toFixed(2);
+    document.getElementById("costoBruto").textContent = costoBruto.toFixed(2);
+}
 </script>
 
 </body>
