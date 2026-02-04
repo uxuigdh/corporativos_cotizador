@@ -111,24 +111,24 @@
         </label>
         <label>Cantidad de Adherentes:
             <input type="number" id="titularAdherentes" min="0">
-            <span class="tooltip">Adherentes: cónyuge o hijos a cargo del titular</span>
+            <span class="tooltip">Adherentes: cónyuge e hijos a cargo del titular</span>
         </label>
-        <button class="btn" onclick="agregarTitular()">Agregar Titular</button>
+        <button class="btn" onclick="agregarTitular()">Agregar titular</button>
 
-        <h2>Carga Masiva CSV</h2>
-        <label>Seleccionar archivo CSV:
+        <h2>Carga masiva</h2>
+        <label>Seleccionar archivo:
             <input type="file" id="csvFile" accept=".csv">
         </label>
-        <button class="btn" onclick="cargarCSV()">Cargar CSV</button>
+        <button class="btn" onclick="cargarCSV()">Cargar archivo</button>
 
-        <h2>Tabla de Titulares y Adherentes</h2>
+        <h2>Tabla de titulares y adherentes</h2>
         <table id="tablaTitulares">
             <thead>
                 <tr>
-                    <th>Apellido y Nombre</th>
+                    <th>Apellido y nombre</th>
                     <th>CUIL</th>
                     <th>Remuneración</th>
-                    <th>Aporte (8%)</th>
+                    <th>Aporte</th>
                     <th>Adherentes</th>
                     <th>Acciones</th>
                 </tr>
@@ -140,12 +140,12 @@
     </div>
 
     <div class="summary-section">
-        <h2>Resumen de Cápitas</h2>
+        <h2>Resumen de cápitas</h2>
         <div class="summary">
-            <p>Total Titulares: <span id="totalTitulares">0</span></p>
-            <p>Total Adherentes: <span id="totalAdherentes">0</span></p>
-            <p><strong>Total General de Cápitas: <span id="totalCapitas">0</span></strong></p>
-            <p><strong>Total Aportes: $<span id="totalAportes">0.00</span></strong></p>
+            <p>Total titulares: <span id="totalTitulares">0</span></p>
+            <p>Total adherentes: <span id="totalAdherentes">0</span></p>
+            <p><strong>Total de cápitas: <span id="totalCapitas">0</span></strong></p>
+            <p><strong>Total de aportes: $<span id="totalAportes">0.00</span></strong></p>
         </div>
     </div>
 
