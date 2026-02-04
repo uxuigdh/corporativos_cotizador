@@ -129,7 +129,7 @@ th {
 <tr>
     <th>CUIL</th>
     <th>Apellido y nombre</th>
-    <th>Remuneración</th>
+    <th>Remunerativo</th>
     <th>Aporte</th>
     <th>Adherentes</th>
 </tr>
@@ -166,26 +166,26 @@ function handleFileUpload(e) {
         data.forEach(row => {
             const cuil = row["CUIL"];
             const nombre = row["Apellido y Nombre"];
-            const remuneracion = Number(row["Remuneración"]);
+            const remunerativo = Number(row["Remunerativo"]);
             const adherentes = Number(
                 row["Cantidad de Adherentes"] ??
                 row["Adherentes"] ??
                 0
             );
 
-            if (!cuil || !nombre || !remuneracion || remuneracion <= 0 || adherentes < 0) {
+            if (!cuil || !nombre || !remunerativo || remunerativo <= 0 || adherentes < 0) {
                 filasInvalidas++;
             }
 
-            if (remuneracion > 0 && remuneracion < 400000) {
+            if (remunerativo > 0 && remunerativo < 400000) {
                 remuneracionesBajas++;
             }
 
             titulares.push({
                 cuil,
                 nombre,
-                remuneracion,
-                aporte: remuneracion * 0.08,
+                remunerativo,
+                aporte: remunerativo * 0.08,
                 adherentes
             });
         });
@@ -208,7 +208,7 @@ function handleFileUpload(e) {
         if (remuneracionesBajas > 0) {
             alertDiv.innerHTML += `
             ⚠️ Atención: se detectaron remuneraciones muy bajas.
-            Revisá que en el archivo original figure la <strong>remuneración</strong>
+            Revisá que en el archivo original figure la <strong>remunerativo</strong>
             y no el <strong>aporte</strong>.`;
         }
 
@@ -232,7 +232,7 @@ function renderTabla() {
         tr.innerHTML = `
             <td>${t.cuil}</td>
             <td>${t.nombre}</td>
-            <td>$${Math.round(t.remuneracion).toLocaleString("es-AR")}</td>
+            <td>$${Math.round(t.remunerativo).toLocaleString("es-AR")}</td>
             <td>$${Math.round(t.aporte).toLocaleString("es-AR")}</td>
             <td>${t.adherentes}</td>
         `;
