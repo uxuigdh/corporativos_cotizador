@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cotizador Corporativo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            gap: 40px;
+        }
+        .form-section, .summary-section {
+            width: 50%;
+        }
+        h2 {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 5px;
+            margin-top: 2px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        .adherente-row {
+            background-color: #f9f9f9;
+        }
+        .btn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+        .summary {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .tooltip {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-section">
+        <h2>Agregar Titular</h2>
+        <label>Apellido y Nombre:
+            <input type="text" id="titularNombre">
+        </label>
+        <label>CUIL:
+            <input type="text" id="titularCUIL">
+        </label>
+        <label>Remuneración:
+            <input type="number" id="titularRemuneracion" min="0">
+        </label>
+        <label>Cantidad de Adherentes:
+            <input type="number" id="titularAdherentes" min="0">
+            <span class="tooltip">Adherentes: cónyuge o hijos a cargo del titular</span>
+        </label>
+        <button class="btn" onclick="agregarTitular()">Agregar Titular</button>
+
+        <h2>Tabla de Titulares y Adherentes</h2>
+        <table id="tablaTitulares">
+            <thead>
+                <tr>
+                    <th>Apellido y Nombre</th>
+                    <th>CUIL</th>
+                    <th>Remuneración</th>
+                    <th>Adherentes</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Filas dinámicas -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary-section">
+        <h2>Resumen de Cápitas</h2>
+        <div class="summary">
+            <p>Total Titulares: <span id="totalTitulares">0</span></p>
+            <p>Total Adherentes: <span id="totalAdherentes">0</span></p>
+            <p><strong>Total General de Cápitas: <span id="totalCapitas">0</span></strong></p>
+        </div>
+    </div>
+
+    <script>
+        let titulares = [];
+
+        function agregarTitular() {
+            const nombre = document.getElementById("titularNombre").value.trim();
+            const cuil = document.getElementById("titularCUIL").value.trim();
+            const remuneracion = parseFloat(document.getElementById("titularRemuneracion").value);
+            const adherentes = parseInt(document.getElementById("titularAdherentes").value);
+
+            if (!nombre || !cuil || isNaN(remuneracion) || remuneracion < 0 || isNaN(adherentes) || adherentes < 0) {
+                alert("Por favor, complete todos los campos correctamente.");
+                return;
+            }
+
+            const titular = {
+                nombre,
+                cuil,
+                remuneracion,
+                adherentes,
+                id: Date.now()
+            };
+
+            titulares.push(titular);
+            actualizarTabla();
+            actualizarResumen();
+            limpiarFormulario();
+        }
+
+        function limpiarFormulario() {
+            document.getElementById("titularNombre").value = '';
+            document.getElementById("titularCUIL").value = '';
+            document.getElementById("titularRemuneracion").value = '';
+            document.getElementById("titularAdherentes").value = '';
+        }
+
+        function actualizarTabla() {
+            const tbody = document.querySelector("#tablaTitulares tbody");
+            tbody.innerHTML = '';
+            titulares.forEach(t => {
+                const fila = document.createElement("tr");
+                fila.innerHTML = `
+                    <td>${t.nombre}</td>
+                    <td>${t.cuil}</td>
+                    <td>${t.remuneracion.toFixed(2)}</td>
+                    <td>${t.adherentes}</td>
+                    <td><button class="btn" onclick="eliminarTitular(${t.id})">Eliminar</button></td>
+                `;
+                tbody.appendChild(fila);
+            });
+        }
+
+        function actualizarResumen() {
+            const totalTitulares = titulares.length;
+            const totalAdherentes = titulares.reduce((sum, t) => sum + t.adherentes, 0);
+            const totalCapitas = totalTitulares + totalAdherentes;
+
+            document.getElementById("totalTitulares").textContent = totalTitulares;
+            document.getElementById("totalAdherentes").textContent = totalAdherentes;
+            document.getElementById("totalCapitas").textContent = totalCapitas;
+        }
+
+        function eliminarTitular(id) {
+            titulares = titulares.filter(t => t.id !== id);
+            actualizarTabla();
+            actualizarResumen();
+        }
+    </script>
+
+</body>
+</html>
