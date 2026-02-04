@@ -165,7 +165,14 @@
             if (!row["CUIL"]) return;
 
             const remuneracion = Number(row["Remuneración"]);
-            const adherentes = Number(row["Cantidad de Adherentes"]) || 0;
+            const adherentes =
+                Number(
+                    row["Cantidad de Adherentes"] ??
+                    row["Adherentes"] ??
+                    row["Cantidad adherentes"] ??
+                    row["Cant. Adherentes"] ??
+                    0
+                );
 
             titulares.push({
                 cuil: row["CUIL"],
