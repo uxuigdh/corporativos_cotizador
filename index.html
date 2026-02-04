@@ -95,6 +95,20 @@
     <input type="file" id="fileInput" accept=".xlsx">
     <button onclick="cargarXLSX()">Cargar XLSX</button>
 
+    <p class="helper-adherentes">
+        ⚠️ En la columna <strong>“Cantidad de Adherentes”</strong>
+        solo deben cargarse cónyuge e hijos.
+        No incluir al titular.
+    </p>
+    
+    <!-- 🔴 ALERTA DINÁMICA -->
+    <div id="alertaAdherentes" class="alerta-warning" style="display:none;">
+        ⚠️ Atención: En la mayoría de los registros todos los titulares tienen adherentes.
+        <br>
+        Verificá que en la columna <strong>“Cantidad de Adherentes”</strong>
+        no se esté incluyendo al titular.
+    </div>
+
     <h2>Detalle de titulares</h2>
     <table>
         <thead>
@@ -182,7 +196,13 @@
                 adherentes
             });
         });
+        const filasConAdherentes = titulares.filter(t => t.adherentes >= 1).length;
+        const porcentaje = filasConAdherentes / titulares.length;
 
+        if (titulares.length > 5 && porcentaje >= 0.9) {
+            mostrarAdvertenciaAdherentes();
+        }
+        
         renderTabla();
         actualizarResumen();
     }
