@@ -1,97 +1,82 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <title>Cotizador corporativo</title>
+<meta charset="UTF-8" />
+<title>COTIZADOR CORPORATIVO</title>
 
-    <!-- Tipografía -->
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-    <!-- SheetJS -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+body {
+    font-family: 'Sora', sans-serif;
+    background-color: #E6EBF2;
+    padding: 24px;
+    color: #2F3A4F;
+}
 
-    <style>
-        body {
-            font-family: 'Sora', sans-serif;
-            background-color: #E6EBF2;
-            padding: 24px;
-            color: #2F3A4F;
-        }
+h1 { color: #3D57C7; }
 
-        h1 {
-            color: #3D57C7;
-        }
+input, select { padding: 8px; margin-top: 8px; }
 
-        input, select {
-            padding: 8px;
-            margin-top: 8px;
-        }
+.helper-adherentes {
+    color: #B00020;
+    font-size: 0.85rem;
+    margin-top: 6px;
+    max-width: 520px;
+}
 
-        .helper-adherentes {
-            color: #B00020;
-            font-size: 0.85rem;
-            margin-top: 6px;
-            max-width: 520px;
-        }
+.alerta-warning {
+    background-color: #EEF2F7;
+    border-left: 4px solid #B00020;
+    padding: 12px;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    max-width: 720px;
+}
 
-        .alerta-warning {
-            background-color: #EEF2F7;
-            border-left: 4px solid #B00020;
-            padding: 12px;
-            margin: 16px 0;
-            font-size: 0.9rem;
-            max-width: 640px;
-        }
+.resumen {
+    background: #FFFFFF;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
 
-        .resumen {
-            background: #FFFFFF;
-            padding: 16px;
-            border-radius: 8px;
-            margin: 16px 0;
-            display: flex;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
+.resumen div { min-width: 170px; }
 
-        .resumen div {
-            min-width: 160px;
-        }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background: #FFFFFF;
+}
 
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background: #FFFFFF;
-            margin-top: 16px;
-        }
+th, td {
+    border: 1px solid #D0D6E2;
+    padding: 8px;
+    font-size: 0.85rem;
+}
 
-        th, td {
-            border: 1px solid #D0D6E2;
-            padding: 8px;
-            font-size: 0.85rem;
-        }
-
-        th {
-            background-color: #3D57C7;
-            color: #FFFFFF;
-        }
-    </style>
+th {
+    background-color: #3D57C7;
+    color: #FFFFFF;
+}
+</style>
 </head>
+
 <body>
 
-<h1>Coargar archivo</h1>
+<h1>COTIZADOR CORPORATIVO</h1>
 
-<input type="file" id="fileInput" accept=".xlsx" />
+<input type="file" id="fileInput" accept=".xlsx">
 
 <p class="helper-adherentes">
-    ⚠️ En la columna <strong>“Adherentes”</strong> cargá solo
-    cónyuge e hijos. No incluir al titular.
+⚠️ En “Adherentes” se cuentan cónyuge e hijos. No incluir al titular.
 </p>
 
-<div id="alertaAdherentes" class="alerta-warning" style="display:none;">
-    ⚠️ Atención: En la mayoría de los registros todos los titulares tienen adherentes.
-    <br>
-    Verificá que no se esté incluyendo al titular como adherente.
-</div>
+<div id="alertaAdherentes" class="alerta-warning" style="display:none;"></div>
 
 <div class="resumen">
     <div>
@@ -103,24 +88,25 @@
         </select>
     </div>
 
-    <div><strong>Titulares:</strong><br><span id="totalTitulares">0</span></div>
-    <div><strong>Adherentes:</strong><br><span id="totalAdherentes">0</span></div>
-    <div><strong>Total cápitas:</strong><br><span id="totalCapitas">0</span></div>
-    <div><strong>Total aportes:</strong><br>$<span id="totalAportes">0</span></div>
-    <div><strong>Costo bruto:</strong><br>$<span id="costoBruto">0</span></div>
+    <div><strong>Titulares</strong><br><span id="totalTitulares">0</span></div>
+    <div><strong>Adherentes</strong><br><span id="totalAdherentes">0</span></div>
+    <div><strong>Total Cápitas</strong><br><span id="totalCapitas">0</span></div>
+    <div><strong>Total Aportes</strong><br>$<span id="totalAportes">0</span></div>
+    <div><strong>Costo Bruto</strong><br>$<span id="costoBruto">0</span></div>
+    <div><strong>Costo Neto</strong><br>$<span id="costoNeto">0</span></div>
 </div>
 
 <table>
-    <thead>
-        <tr>
-            <th>CUIL</th>
-            <th>Apellido y nombre</th>
-            <th>Remuneración</th>
-            <th>Aporte</th>
-            <th>Adherentes</th>
-        </tr>
-    </thead>
-    <tbody id="tablaDatos"></tbody>
+<thead>
+<tr>
+    <th>CUIL</th>
+    <th>Apellido y nombre</th>
+    <th>Remuneración</th>
+    <th>Aporte (8%)</th>
+    <th>Adherentes</th>
+</tr>
+</thead>
+<tbody id="tablaDatos"></tbody>
 </table>
 
 <script>
@@ -135,8 +121,10 @@ const preciosPlanes = {
 document.getElementById("fileInput").addEventListener("change", handleFileUpload);
 
 function handleFileUpload(e) {
-    document.getElementById("alertaAdherentes").style.display = "none";
     titulares = [];
+    const alertDiv = document.getElementById("alertaAdherentes");
+    alertDiv.style.display = "none";
+    alertDiv.innerHTML = "";
 
     const reader = new FileReader();
     reader.onload = evt => {
@@ -144,18 +132,25 @@ function handleFileUpload(e) {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = XLSX.utils.sheet_to_json(sheet);
 
+        let filasInvalidas = 0;
+
         data.forEach(row => {
-            const remuneracion = Number(row["Remuneración"]) || 0;
+            const cuil = row["CUIL"];
+            const nombre = row["Apellido y Nombre"];
+            const remuneracion = Number(row["Remuneración"]);
             const adherentes = Number(
                 row["Cantidad de Adherentes"] ??
                 row["Adherentes"] ??
-                row["Cantidad adherentes"] ??
                 0
             );
 
+            if (!cuil || !nombre || !remuneracion || remuneracion <= 0 || adherentes < 0) {
+                filasInvalidas++;
+            }
+
             titulares.push({
-                cuil: row["CUIL"],
-                nombre: row["Apellido y Nombre"],
+                cuil,
+                nombre,
                 remuneracion,
                 aporte: remuneracion * 0.08,
                 adherentes
@@ -166,7 +161,17 @@ function handleFileUpload(e) {
         const porcentaje = filasConAdherentes / titulares.length;
 
         if (titulares.length > 5 && porcentaje >= 0.9) {
-            document.getElementById("alertaAdherentes").style.display = "block";
+            alertDiv.innerHTML += `
+            ⚠️ Atención: más del 90% de los titulares tienen adherentes.
+            Verificá que no se esté incluyendo al titular.<br><br>`;
+            alertDiv.style.display = "block";
+        }
+
+        if (filasInvalidas > 0) {
+            alertDiv.innerHTML += `
+            ❗ Se detectaron ${filasInvalidas} filas con datos incompletos o inválidos.
+            Revisá el archivo Excel original antes de continuar.`;
+            alertDiv.style.display = "block";
         }
 
         renderTabla();
@@ -184,8 +189,8 @@ function renderTabla() {
         tr.innerHTML = `
             <td>${t.cuil}</td>
             <td>${t.nombre}</td>
-            <td>${t.remuneracion.toFixed(2)}</td>
-            <td>${t.aporte.toFixed(2)}</td>
+            <td>$${Math.round(t.remuneracion).toLocaleString("es-AR")}</td>
+            <td>$${Math.round(t.aporte).toLocaleString("es-AR")}</td>
             <td>${t.adherentes}</td>
         `;
         tbody.appendChild(tr);
@@ -200,12 +205,17 @@ function actualizarResumen() {
 
     const plan = document.getElementById("planGlobal").value;
     const costoBruto = preciosPlanes[plan] * totalCapitas;
+    const costoNeto = costoBruto - totalAportes;
 
     document.getElementById("totalTitulares").textContent = totalTitulares;
     document.getElementById("totalAdherentes").textContent = totalAdherentes;
     document.getElementById("totalCapitas").textContent = totalCapitas;
-    document.getElementById("totalAportes").textContent = totalAportes.toFixed(2);
-    document.getElementById("costoBruto").textContent = costoBruto.toFixed(2);
+    document.getElementById("totalAportes").textContent =
+        Math.round(totalAportes).toLocaleString("es-AR");
+    document.getElementById("costoBruto").textContent =
+        Math.round(costoBruto).toLocaleString("es-AR");
+    document.getElementById("costoNeto").textContent =
+        Math.round(costoNeto).toLocaleString("es-AR");
 }
 </script>
 
