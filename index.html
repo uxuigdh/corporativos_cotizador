@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Cotizador Corporativo - Tablero Interactivo</title>
+    <title>Cotizador corporativo</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -47,22 +47,22 @@
 <body>
 
     <div class="form-section">
-        <h2>Carga Masiva CSV</h2>
-        <label>Seleccionar archivo CSV:
+        <h2>Carga masiva</h2>
+        <label>Adjuntar archivo :
             <input type="file" id="csvFile" accept=".csv">
         </label>
         <button class="btn" onclick="cargarCSV()">Cargar CSV</button>
 
-        <h2>Tabla de Titulares y Adherentes</h2>
+        <h2>Base de titulares y adherentes</h2>
         <table id="tablaTitulares">
             <thead>
                 <tr>
-                    <th>Apellido y Nombre</th>
+                    <th>Apellido y nombre</th>
                     <th>CUIL</th>
                     <th>Remuneración</th>
                     <th>Plan</th>
-                    <th>Precio Plan</th>
-                    <th>Aporte (8%)</th>
+                    <th>Precio plan</th>
+                    <th>Aporte </th>
                     <th>Adherentes</th>
                 </tr>
             </thead>
@@ -71,13 +71,13 @@
     </div>
 
     <div class="summary-section">
-        <h2>Resumen de Cápitas</h2>
+        <h2>Resumen de cápitas</h2>
         <div class="summary">
-            <p>Total Titulares: <span id="totalTitulares">0</span></p>
-            <p>Total Adherentes: <span id="totalAdherentes">0</span></p>
-            <p><strong>Total General de Cápitas: <span id="totalCapitas">0</span></strong></p>
-            <p><strong>Total Aportes: $<span id="totalAportes">0.00</span></strong></p>
-            <p><strong>Costo Bruto Total: $<span id="costoBruto">0.00</span></strong></p>
+            <p>Titulares: <span id="totalTitulares">0</span></p>
+            <p>Adherentes: <span id="totalAdherentes">0</span></p>
+            <p><strong>Total de cápitas: <span id="totalCapitas">0</span></strong></p>
+            <p><strong>Total de aportes: $<span id="totalAportes">0.00</span></strong></p>
+            <p><strong>Costo bruto total: $<span id="costoBruto">0.00</span></strong></p>
         </div>
     </div>
 
