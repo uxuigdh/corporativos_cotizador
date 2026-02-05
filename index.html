@@ -195,14 +195,14 @@ function handleFileUpload(e) {
 
         if (titulares.length > 5 && porcentajeAdherentes >= 0.9) {
             alertDiv.innerHTML += `
-            ⚠️ Atención: en la mayoría de los registros todos los titulares tienen adherentes.
+            ⚠️ Atención: en la mayoría de los registros los titulares tienen adherentes.
                Verificá que no se esté incluyendo al titular.<br><br>`;
         }
 
         if (filasInvalidas > 0) {
             alertDiv.innerHTML += `
             ❗ Se detectaron ${filasInvalidas} filas con datos incompletos o inválidos.
-            Revisá el archivo Excel original.<br><br>`;
+            Revisá el archivo de origen. Los encabezados deben ser: CUIL | Apellido y nombre | Remuneración | Adherentes<br><br>`;
         }
 
         if (remuneracionesBajas > 0) {
