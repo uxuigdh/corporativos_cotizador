@@ -7,7 +7,9 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    
 <style>
 body {
     font-family: 'Sora', sans-serif;
@@ -87,6 +89,12 @@ th {
 <h1>CANAL CORPORATIVO</h1>
 <p>Asistente para cotizaciones</p>
 <input type="file" id="fileInput" accept=".xlsx">
+<div style="margin-top:16px;">
+    <label><strong>Empresa</strong></label><br>
+    <input type="text" id="empresaInput" placeholder="Nombre de la empresa" style="width:360px;">
+    <br><br>
+    <button onclick="exportarPDF()">Exportar PDF</button>
+</div>
 
 <p class="helper-adherentes">
 ⚠️ Encabezados requeridos: CUIL | Apellido y nombre | Remuneración | Adherentes<br>
@@ -236,6 +244,89 @@ function actualizarResumen() {
         document.getElementById("costoBruto").textContent = Math.round(costoBruto).toLocaleString("es-AR"),
         document.getElementById("costoNeto").textContent = Math.round(costoNeto).toLocaleString("es-AR")
     );
+async function exportarPDF() {
+    if (titulares.length === 0) {
+        alert("Primero cargá un archivo Excel");
+        return;
+    }
+
+    const empresa = document.getElementById("empresaInput").value.trim();
+    if (!empresa) {
+        alert("Ingresá el nombre de la empresa");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+
+    // Fecha larga
+    const fecha = new Date().toLocaleDateString("es-AR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+    });
+
+    // Texto presentación
+    doc.setFont("helvetica");
+    doc.setFontSize(11);
+
+    doc.text(`Córdoba, ${fecha}`, 15, 20);
+    doc.setFontSize(12);
+    doc.text(`Empresa: ${empresa}`, 15, 30);
+
+    const texto = `
+Por medio de la presente, se detalla la cotización correspondiente a la
+prestación de servicios de cobertura médica para el personal de la empresa,
+según la información provista y los valores vigentes al momento de la emisión.
+`;
+
+    doc.setFontSize(11);
+    doc.text(texto.trim(), 15, 42, { maxWidth: 180 });
+
+    // Resumen por plan
+    const planes = ["D2100", "D3100", "D4100"];
+    const body = planes.map(plan => {
+        const totalTitulares = titulares.length;
+        const totalAdherentes = titulares.reduce((s, t) => s + t.adherentes, 0);
+        const totalCapitas = totalTitulares + totalAdherentes;
+        const totalAportes = titulares.reduce((s, t) => s + t.aporte, 0);
+
+        const costoBruto = preciosPlanes[plan] * totalCapitas;
+        const costoNeto = costoBruto - totalAportes;
+
+        return [
+            plan,
+            totalTitulares,
+            totalAdherentes,
+            `$ ${Math.round(costoBruto).toLocaleString("es-AR")}`,
+            `$ ${Math.round(totalAportes).toLocaleString("es-AR")}`,
+            `$ ${Math.round(costoNeto).toLocaleString("es-AR")}`
+        ];
+    });
+
+    doc.autoTable({
+        startY: 70,
+        head: [[
+            "Plan",
+            "Titulares",
+            "Adherentes",
+            "Tarifa",
+            "Aportes",
+            "Diferencia"
+        ]],
+        body,
+        styles: {
+            fontSize: 9,
+            halign: "center"
+        },
+        headStyles: {
+            fillColor: [61, 87, 199],
+            textColor: 255
+        }
+    });
+
+    doc.save(`Cotizacion_${empresa}.pdf`);
+}
 }
 </script>
 
