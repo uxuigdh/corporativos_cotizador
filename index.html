@@ -244,7 +244,7 @@ function actualizarResumen() {
         document.getElementById("costoBruto").textContent = Math.round(costoBruto).toLocaleString("es-AR"),
         document.getElementById("costoNeto").textContent = Math.round(costoNeto).toLocaleString("es-AR")
     );
-async function exportarPDF() {
+function exportarPDF() {
     if (titulares.length === 0) {
         alert("Primero cargá un archivo Excel");
         return;
@@ -256,20 +256,17 @@ async function exportarPDF() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF("p", "mm", "a4");
+    // jsPDF correcto
+    const doc = new window.jsPDF("p", "mm", "a4");
 
-    // Fecha larga
     const fecha = new Date().toLocaleDateString("es-AR", {
         day: "numeric",
         month: "long",
         year: "numeric"
     });
 
-    // Texto presentación
-    doc.setFont("helvetica");
+    // Encabezado
     doc.setFontSize(11);
-
     doc.text(`Córdoba, ${fecha}`, 15, 20);
     doc.setFontSize(12);
     doc.text(`Empresa: ${empresa}`, 15, 30);
@@ -283,14 +280,14 @@ según la información provista y los valores vigentes al momento de la emisión
     doc.setFontSize(11);
     doc.text(texto.trim(), 15, 42, { maxWidth: 180 });
 
-    // Resumen por plan
-    const planes = ["D2100", "D3100", "D4100"];
-    const body = planes.map(plan => {
-        const totalTitulares = titulares.length;
-        const totalAdherentes = titulares.reduce((s, t) => s + t.adherentes, 0);
-        const totalCapitas = totalTitulares + totalAdherentes;
-        const totalAportes = titulares.reduce((s, t) => s + t.aporte, 0);
+    const totalTitulares = titulares.length;
+    const totalAdherentes = titulares.reduce((s, t) => s + t.adherentes, 0);
+    const totalCapitas = totalTitulares + totalAdherentes;
+    const totalAportes = titulares.reduce((s, t) => s + t.aporte, 0);
 
+    const planes = ["D2100", "D3100", "D4100"];
+
+    const body = planes.map(plan => {
         const costoBruto = preciosPlanes[plan] * totalCapitas;
         const costoNeto = costoBruto - totalAportes;
 
@@ -326,7 +323,6 @@ según la información provista y los valores vigentes al momento de la emisión
     });
 
     doc.save(`Cotizacion_${empresa}.pdf`);
-}
 }
 </script>
 
