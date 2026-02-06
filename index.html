@@ -5,11 +5,12 @@
 <title>Asistente Canal Corporativo</title>
 <link rel="icon" href="favicon.png" type="image/png">
 
+<!-- Tipografía -->
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+
+<!-- SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-    
+
 <style>
 body {
     font-family: 'Sora', sans-serif;
@@ -18,13 +19,16 @@ body {
     color: #2F3A4F;
 }
 
-h1 { color: #3D57C7; }
+h1 {
+    color: #3D57C7;
+}
 
 input, select {
     padding: 8px;
     margin-top: 8px;
 }
 
+/* Helpers y alertas */
 .helper-adherentes {
     color: #B00020;
     font-size: 0.85rem;
@@ -41,29 +45,34 @@ input, select {
     max-width: 1020px;
 }
 
+/* TABLERO */
 .resumen {
     background: #FFFFFF;
     padding: 16px;
     border-radius: 8px;
     margin: 12px 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 16px;
 }
 
-.resumen div { text-align: center; }
+.resumen div {
+    text-align: center;
+}
 
 .resumen strong {
     display: block;
     font-size: 0.75rem;
     color: #005E5C;
+    margin-bottom: 4px;
 }
 
 .resumen span {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
 }
 
+/* TABLA */
 table {
     border-collapse: collapse;
     width: 100%;
@@ -89,20 +98,15 @@ th {
 <h1>CANAL CORPORATIVO</h1>
 <p>Asistente para cotizaciones</p>
 <input type="file" id="fileInput" accept=".xlsx">
-<div style="margin-top:16px;">
-    <label><strong>Empresa</strong></label><br>
-    <input type="text" id="empresaInput" placeholder="Nombre de la empresa" style="width:360px;">
-    <br><br>
-    <button onclick="exportarPDF()">Exportar PDF</button>
-</div>
 
 <p class="helper-adherentes">
-⚠️ Encabezados requeridos: CUIL | Apellido y nombre | Remuneración | Adherentes<br>
-⚠️ En “Adherentes” contar solo cónyuge e hijos (no incluir titular).
+⚠️ En el Excel de origen, los encabezados deben ser: CUIL | Apellido y nombre | Remuneración | Adherentes<br>
+⚠️ En “Adherentes” se cuentan solo cónyuge e hijos. No incluir al titular.
 </p>
 
 <div id="alertaAdherentes" class="alerta-warning" style="display:none;"></div>
 
+<!-- TABLERO -->
 <div class="resumen">
     <div>
         <strong>Plan</strong>
@@ -112,14 +116,16 @@ th {
             <option value="D4100">D4100 - $84.062</option>
         </select>
     </div>
+
     <div><strong>Titulares</strong><span id="totalTitulares">0</span></div>
     <div><strong>Adherentes</strong><span id="totalAdherentes">0</span></div>
     <div><strong>Total Cápitas</strong><span id="totalCapitas">0</span></div>
     <div><strong>Costo Bruto</strong>$<span id="costoBruto">0</span></div>
     <div><strong>Total Aportes</strong>$<span id="totalAportes">0</span></div>
-    <div><strong>Costo Neto</strong>$<span id="costoNeto">0</span></div>
+    <div><strong>Costo Neto</strong>$<span id="costoNeto">0</span></div>    
 </div>
 
+<!-- TABLA -->
 <table>
 <thead>
 <tr>
@@ -151,9 +157,8 @@ function handleFileUpload(e) {
     alertDiv.innerHTML = "";
 
     const reader = new FileReader();
-
     reader.onload = evt => {
-        const workbook = XLSX.read(evt.target.result, { type: "array" });
+        const workbook = XLSX.read(evt.target.result, { type: "binary" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = XLSX.utils.sheet_to_json(sheet);
 
@@ -162,7 +167,7 @@ function handleFileUpload(e) {
 
         data.forEach(row => {
             const cuil = row["CUIL"];
-            const nombre = row["Apellido y nombre"] || row["Apellido y Nombre"];
+            const nombre = row["Apellido y Nombre"];
             const remuneracion = Number(row["Remuneración"]);
             const adherentes = Number(
                 row["Cantidad de Adherentes"] ??
@@ -187,11 +192,37 @@ function handleFileUpload(e) {
             });
         });
 
+        const filasConAdherentes = titulares.filter(t => t.adherentes >= 1).length;
+        const porcentajeAdherentes = filasConAdherentes / titulares.length;
+
+        if (titulares.length > 5 && porcentajeAdherentes >= 0.9) {
+            alertDiv.innerHTML += `
+            ⚠️ Atención: en la mayoría de los registros los titulares tienen adherentes.
+               Verificá que no se esté incluyendo al titular.<br><br>`;
+        }
+
+        if (filasInvalidas > 0) {
+            alertDiv.innerHTML += `
+            ❗ Se detectaron ${filasInvalidas} filas con datos incompletos o inválidos.
+            Revisá el archivo de origen. Los encabezados deben ser: CUIL | Apellido y nombre | Remuneración | Adherentes<br><br>`;
+        }
+
+        if (remuneracionesBajas > 0) {
+            alertDiv.innerHTML += `
+            ⚠️ Atención: se detectaron remuneraciones muy bajas.
+            Revisá que en el archivo original figure la <strong>remuneración</strong>
+            y no el <strong>aporte</strong>.`;
+        }
+
+        if (alertDiv.innerHTML !== "") {
+            alertDiv.style.display = "block";
+        }
+
         renderTabla();
         actualizarResumen();
     };
 
-    reader.readAsArrayBuffer(e.target.files[0]);
+    reader.readAsBinaryString(e.target.files[0]);
 }
 
 function renderTabla() {
@@ -199,14 +230,15 @@ function renderTabla() {
     tbody.innerHTML = "";
 
     titulares.forEach(t => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${t.cuil}</td>
-                <td>${t.nombre}</td>
-                <td>$${Math.round(t.remuneracion).toLocaleString("es-AR")}</td>
-                <td>$${Math.round(t.aporte).toLocaleString("es-AR")}</td>
-                <td>${t.adherentes}</td>
-            </tr>`;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${t.cuil}</td>
+            <td>${t.nombre}</td>
+            <td>$${Math.round(t.remuneracion).toLocaleString("es-AR")}</td>
+            <td>$${Math.round(t.aporte).toLocaleString("es-AR")}</td>
+            <td>${t.adherentes}</td>
+        `;
+        tbody.appendChild(tr);
     });
 }
 
@@ -220,93 +252,15 @@ function actualizarResumen() {
     const costoBruto = preciosPlanes[plan] * totalCapitas;
     const costoNeto = costoBruto - totalAportes;
 
-    totalTitulares && (
-        document.getElementById("totalTitulares").textContent = totalTitulares,
-        document.getElementById("totalAdherentes").textContent = totalAdherentes,
-        document.getElementById("totalCapitas").textContent = totalCapitas,
-        document.getElementById("totalAportes").textContent = Math.round(totalAportes).toLocaleString("es-AR"),
-        document.getElementById("costoBruto").textContent = Math.round(costoBruto).toLocaleString("es-AR"),
-        document.getElementById("costoNeto").textContent = Math.round(costoNeto).toLocaleString("es-AR")
-    );
-function exportarPDF() {
-    if (titulares.length === 0) {
-        alert("Primero cargá un archivo Excel");
-        return;
-    }
-
-    const empresa = document.getElementById("empresaInput").value.trim();
-    if (!empresa) {
-        alert("Ingresá el nombre de la empresa");
-        return;
-    }
-
-    // jsPDF correcto
-    const doc = new window.jsPDF("p", "mm", "a4");
-
-    const fecha = new Date().toLocaleDateString("es-AR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric"
-    });
-
-    // Encabezado
-    doc.setFontSize(11);
-    doc.text(`Córdoba, ${fecha}`, 15, 20);
-    doc.setFontSize(12);
-    doc.text(`Empresa: ${empresa}`, 15, 30);
-
-    const texto = `
-Por medio de la presente, se detalla la cotización correspondiente a la
-prestación de servicios de cobertura médica para el personal de la empresa,
-según la información provista y los valores vigentes al momento de la emisión.
-`;
-
-    doc.setFontSize(11);
-    doc.text(texto.trim(), 15, 42, { maxWidth: 180 });
-
-    const totalTitulares = titulares.length;
-    const totalAdherentes = titulares.reduce((s, t) => s + t.adherentes, 0);
-    const totalCapitas = totalTitulares + totalAdherentes;
-    const totalAportes = titulares.reduce((s, t) => s + t.aporte, 0);
-
-    const planes = ["D2100", "D3100", "D4100"];
-
-    const body = planes.map(plan => {
-        const costoBruto = preciosPlanes[plan] * totalCapitas;
-        const costoNeto = costoBruto - totalAportes;
-
-        return [
-            plan,
-            totalTitulares,
-            totalAdherentes,
-            `$ ${Math.round(costoBruto).toLocaleString("es-AR")}`,
-            `$ ${Math.round(totalAportes).toLocaleString("es-AR")}`,
-            `$ ${Math.round(costoNeto).toLocaleString("es-AR")}`
-        ];
-    });
-
-    doc.autoTable({
-        startY: 70,
-        head: [[
-            "Plan",
-            "Titulares",
-            "Adherentes",
-            "Tarifa",
-            "Aportes",
-            "Diferencia"
-        ]],
-        body,
-        styles: {
-            fontSize: 9,
-            halign: "center"
-        },
-        headStyles: {
-            fillColor: [61, 87, 199],
-            textColor: 255
-        }
-    });
-
-    doc.save(`Cotizacion_${empresa}.pdf`);
+    document.getElementById("totalTitulares").textContent = totalTitulares;
+    document.getElementById("totalAdherentes").textContent = totalAdherentes;
+    document.getElementById("totalCapitas").textContent = totalCapitas;
+    document.getElementById("totalAportes").textContent =
+        Math.round(totalAportes).toLocaleString("es-AR");
+    document.getElementById("costoBruto").textContent =
+        Math.round(costoBruto).toLocaleString("es-AR");
+    document.getElementById("costoNeto").textContent =
+        Math.round(costoNeto).toLocaleString("es-AR");
 }
 </script>
 
