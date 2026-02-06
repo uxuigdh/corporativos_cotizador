@@ -5,14 +5,8 @@
 <title>Asistente Canal Corporativo</title>
 <link rel="icon" href="favicon.png" type="image/png">
 
-<!-- Tipografía -->
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
-
-<!-- SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<!-- PDF LIB -->
-<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 
 <style>
 body {
@@ -24,20 +18,11 @@ body {
 
 h1 { color: #3D57C7; }
 
-input, select, button {
+input, select {
     padding: 8px;
     margin-top: 8px;
 }
 
-button {
-    background: #3D57C7;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-/* Helpers y alertas */
 .helper-adherentes {
     color: #B00020;
     font-size: 0.85rem;
@@ -54,15 +39,14 @@ button {
     max-width: 1020px;
 }
 
-/* TABLERO */
 .resumen {
     background: #FFFFFF;
     padding: 16px;
     border-radius: 8px;
     margin: 12px 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 12px;
 }
 
 .resumen div { text-align: center; }
@@ -71,15 +55,13 @@ button {
     display: block;
     font-size: 0.75rem;
     color: #005E5C;
-    margin-bottom: 4px;
 }
 
 .resumen span {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
 }
 
-/* TABLA */
 table {
     border-collapse: collapse;
     width: 100%;
@@ -104,19 +86,15 @@ th {
 
 <h1>CANAL CORPORATIVO</h1>
 <p>Asistente para cotizaciones</p>
-
-<input type="file" id="fileInput" accept=".xlsx"><br>
-
-<input type="text" id="empresaInput" placeholder="Empresa (ej: ACME S.A.)" style="width:300px">
+<input type="file" id="fileInput" accept=".xlsx">
 
 <p class="helper-adherentes">
 ⚠️ Encabezados requeridos: CUIL | Apellido y nombre | Remuneración | Adherentes<br>
-⚠️ En “Adherentes” contar solo cónyuge e hijos.
+⚠️ En “Adherentes” contar solo cónyuge e hijos (no incluir titular).
 </p>
 
 <div id="alertaAdherentes" class="alerta-warning" style="display:none;"></div>
 
-<!-- TABLERO -->
 <div class="resumen">
     <div>
         <strong>Plan</strong>
@@ -126,18 +104,14 @@ th {
             <option value="D4100">D4100 - $84.062</option>
         </select>
     </div>
-
     <div><strong>Titulares</strong><span id="totalTitulares">0</span></div>
     <div><strong>Adherentes</strong><span id="totalAdherentes">0</span></div>
     <div><strong>Total Cápitas</strong><span id="totalCapitas">0</span></div>
     <div><strong>Costo Bruto</strong>$<span id="costoBruto">0</span></div>
     <div><strong>Total Aportes</strong>$<span id="totalAportes">0</span></div>
-    <div><strong>Costo Neto</strong>$<span id="costoNeto">0</span></div>    
+    <div><strong>Costo Neto</strong>$<span id="costoNeto">0</span></div>
 </div>
 
-<button onclick="exportarPDF()">Exportar PDF</button>
-
-<!-- TABLA -->
 <table>
 <thead>
 <tr>
@@ -160,70 +134,108 @@ const preciosPlanes = {
     D4100: 84062
 };
 
-/* === TODO TU JS EXISTENTE (SIN CAMBIOS) === */
-/* … se mantiene exactamente igual … */
+document.getElementById("fileInput").addEventListener("change", handleFileUpload);
 
-/* === EXPORTAR PDF === */
-async function exportarPDF() {
-    if (!empresaInput.value) {
-        alert("Ingresá el nombre de la empresa");
-        return;
-    }
+function handleFileUpload(e) {
+    titulares = [];
+    const alertDiv = document.getElementById("alertaAdherentes");
+    alertDiv.style.display = "none";
+    alertDiv.innerHTML = "";
 
-    const { PDFDocument, rgb } = PDFLib;
+    const reader = new FileReader();
+    reader.onload = evt => {
+        const workbook = XLSX.read(evt.target.result, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-    const pdfBytes = await fetch("plantilla.pdf").then(r => r.arrayBuffer());
-    const fontBytes = await fetch("fonts/Sora-Regular.ttf").then(r => r.arrayBuffer());
+        let filasInvalidas = 0;
+        let remuneracionesBajas = 0;
 
-    const pdfDoc = await PDFDocument.load(pdfBytes);
-    const sora = await pdfDoc.embedFont(fontBytes);
-    const page = pdfDoc.getPages()[0];
+        data.forEach(row => {
+            const cuil = row["CUIL"];
 
-    const draw = (text, x, y, size = 10) => {
-        page.drawText(String(text), {
-            x, y, size,
-            font: sora,
-            color: rgb(1,1,1)
+            const nombre =
+                row["Apellido y nombre"] ||
+                row["Apellido y Nombre"] ||
+                row["Apellidos y nombres"];
+
+            const remuneracion = Number(row["Remuneración"]);
+
+            const adherentes = Number(
+                row["Adherentes"] ??
+                row["Cantidad de Adherentes"] ??
+                0
+            );
+
+            if (!cuil || !nombre || remuneracion <= 0 || adherentes < 0) {
+                filasInvalidas++;
+                return;
+            }
+
+            if (remuneracion < 400000) {
+                remuneracionesBajas++;
+            }
+
+            titulares.push({
+                cuil,
+                nombre,
+                remuneracion,
+                aporte: remuneracion * 0.08,
+                adherentes
+            });
         });
+
+        if (filasInvalidas > 0) {
+            alertDiv.innerHTML += `❗ ${filasInvalidas} filas con datos incompletos.<br><br>`;
+        }
+
+        if (remuneracionesBajas > 0) {
+            alertDiv.innerHTML += `⚠️ Revisar remuneraciones: parecen aportes y no sueldos.<br>`;
+        }
+
+        if (alertDiv.innerHTML) alertDiv.style.display = "block";
+
+        renderTabla();
+        actualizarResumen();
     };
 
-    const fecha = new Date().toLocaleDateString("es-AR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric"
+    reader.readAsArrayBuffer(e.target.files[0]);
+}
+
+function renderTabla() {
+    const tbody = document.getElementById("tablaDatos");
+    tbody.innerHTML = "";
+
+    titulares.forEach(t => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${t.cuil}</td>
+                <td>${t.nombre}</td>
+                <td>$${Math.round(t.remuneracion).toLocaleString("es-AR")}</td>
+                <td>$${Math.round(t.aporte).toLocaleString("es-AR")}</td>
+                <td>${t.adherentes}</td>
+            </tr>`;
     });
+}
 
-    draw(empresaInput.value, 80, 735);
-    draw(`Córdoba, ${fecha}`, 380, 720);
+function actualizarResumen() {
+    const totalTitulares = titulares.length;
+    const totalAdherentes = titulares.reduce((s, t) => s + t.adherentes, 0);
+    const totalCapitas = totalTitulares + totalAdherentes;
+    const totalAportes = titulares.reduce((s, t) => s + t.aporte, 0);
 
-    const totalTit = titulares.length;
-    const totalAdh = titulares.reduce((s,t)=>s+t.adherentes,0);
-    const capitas = totalTit + totalAdh;
-    const totalAportes = titulares.reduce((s,t)=>s+t.aporte,0);
+    const plan = document.getElementById("planGlobal").value;
+    const costoBruto = preciosPlanes[plan] * totalCapitas;
+    const costoNeto = costoBruto - totalAportes;
 
-    const filas = [
-        { plan: "D2100", y: 495 },
-        { plan: "D3100", y: 470 },
-        { plan: "D4100", y: 445 }
-    ];
-
-    filas.forEach(f => {
-        const bruto = preciosPlanes[f.plan] * capitas;
-        const neto = bruto - totalAportes;
-
-        draw(totalTit, 170, f.y);
-        draw(totalAdh, 250, f.y);
-        draw(`$${Math.round(bruto).toLocaleString("es-AR")}`, 340, f.y);
-        draw(`$${Math.round(totalAportes).toLocaleString("es-AR")}`, 430, f.y);
-        draw(`$${Math.round(neto).toLocaleString("es-AR")}`, 520, f.y);
-    });
-
-    const bytes = await pdfDoc.save();
-    const blob = new Blob([bytes], { type: "application/pdf" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `Cotizacion_${empresaInput.value}.pdf`;
-    link.click();
+    totalTitulares && (
+        document.getElementById("totalTitulares").textContent = totalTitulares,
+        document.getElementById("totalAdherentes").textContent = totalAdherentes,
+        document.getElementById("totalCapitas").textContent = totalCapitas,
+        document.getElementById("totalAportes").textContent = Math.round(totalAportes).toLocaleString("es-AR"),
+        document.getElementById("costoBruto").textContent = Math.round(costoBruto).toLocaleString("es-AR"),
+        document.getElementById("costoNeto").textContent = Math.round(costoNeto).toLocaleString("es-AR")
+    );
 }
 </script>
 
