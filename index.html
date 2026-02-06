@@ -151,36 +151,30 @@ function handleFileUpload(e) {
     alertDiv.innerHTML = "";
 
     const reader = new FileReader();
+
     reader.onload = evt => {
         const workbook = XLSX.read(evt.target.result, { type: "array" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        const data = XLSX.utils.sheet_to_json(sheet);
 
         let filasInvalidas = 0;
         let remuneracionesBajas = 0;
 
         data.forEach(row => {
             const cuil = row["CUIL"];
-
-            const nombre =
-                row["Apellido y nombre"] ||
-                row["Apellido y Nombre"] ||
-                row["Apellidos y nombres"];
-
+            const nombre = row["Apellido y nombre"] || row["Apellido y Nombre"];
             const remuneracion = Number(row["Remuneración"]);
-
             const adherentes = Number(
-                row["Adherentes"] ??
                 row["Cantidad de Adherentes"] ??
+                row["Adherentes"] ??
                 0
             );
 
-            if (!cuil || !nombre || remuneracion <= 0 || adherentes < 0) {
+            if (!cuil || !nombre || !remuneracion || remuneracion <= 0 || adherentes < 0) {
                 filasInvalidas++;
-                return;
             }
 
-            if (remuneracion < 400000) {
+            if (remuneracion > 0 && remuneracion < 400000) {
                 remuneracionesBajas++;
             }
 
@@ -192,16 +186,6 @@ function handleFileUpload(e) {
                 adherentes
             });
         });
-
-        if (filasInvalidas > 0) {
-            alertDiv.innerHTML += `❗ ${filasInvalidas} filas con datos incompletos.<br><br>`;
-        }
-
-        if (remuneracionesBajas > 0) {
-            alertDiv.innerHTML += `⚠️ Revisar remuneraciones: parecen aportes y no sueldos.<br>`;
-        }
-
-        if (alertDiv.innerHTML) alertDiv.style.display = "block";
 
         renderTabla();
         actualizarResumen();
