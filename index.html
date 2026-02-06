@@ -150,6 +150,17 @@ const preciosPlanes = {
 
 document.getElementById("fileInput").addEventListener("change", handleFileUpload);
 
+/* =========================
+   NORMALIZACIÓN DE CLAVES
+   ========================= */
+function normalizarClave(clave) {
+    return clave
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 function handleFileUpload(e) {
     titulares = [];
     const alertDiv = document.getElementById("alertaAdherentes");
@@ -160,18 +171,24 @@ function handleFileUpload(e) {
     reader.onload = evt => {
         const workbook = XLSX.read(evt.target.result, { type: "binary" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(sheet);
+        const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
         let filasInvalidas = 0;
         let remuneracionesBajas = 0;
 
         data.forEach(row => {
-            const cuil = row["CUIL"];
-            const nombre = row["Apellido y Nombre"];
-            const remuneracion = Number(row["Remuneración"]);
+            const rowNormalizada = {};
+
+            Object.keys(row).forEach(key => {
+                rowNormalizada[normalizarClave(key)] = row[key];
+            });
+
+            const cuil = rowNormalizada["cuil"];
+            const nombre = rowNormalizada["apellido y nombre"];
+            const remuneracion = Number(rowNormalizada["remuneracion"]);
             const adherentes = Number(
-                row["Cantidad de Adherentes"] ??
-                row["Adherentes"] ??
+                rowNormalizada["cantidad de adherentes"] ??
+                rowNormalizada["adherentes"] ??
                 0
             );
 
@@ -198,19 +215,19 @@ function handleFileUpload(e) {
         if (titulares.length > 5 && porcentajeAdherentes >= 0.9) {
             alertDiv.innerHTML += `
             ⚠️ Atención: en la mayoría de los registros los titulares tienen adherentes.
-               Verificá que no se esté incluyendo al titular.<br><br>`;
+            Verificá que no se esté incluyendo al titular.<br><br>`;
         }
 
         if (filasInvalidas > 0) {
             alertDiv.innerHTML += `
             ❗ Se detectaron ${filasInvalidas} filas con datos incompletos o inválidos.
-            Revisá el archivo de origen. Los encabezados deben ser: CUIL | Apellido y nombre | Remuneración | Adherentes<br><br>`;
+            Revisá el archivo de origen.<br><br>`;
         }
 
         if (remuneracionesBajas > 0) {
             alertDiv.innerHTML += `
             ⚠️ Atención: se detectaron remuneraciones muy bajas.
-            Revisá que en el archivo original figure la <strong>remuneración</strong>
+            Revisá que figure la <strong>remuneración</strong>
             y no el <strong>aporte</strong>.`;
         }
 
